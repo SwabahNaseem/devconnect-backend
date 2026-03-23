@@ -3,6 +3,7 @@ package com.devconnect.service;
 import com.devconnect.dto.UserProfileResponse;
 import com.devconnect.model.User;
 import com.devconnect.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,19 +16,21 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
+    private final PasswordEncoder passwordEncoder;
 
     private static final String BASE_URL = "http://localhost:8080/";
 
-    // Manual constructor
     public UserService(UserRepository userRepository,
-                       FileStorageService fileStorageService) {
-        this.userRepository = userRepository;
-        this.fileStorageService = fileStorageService;
+                       FileStorageService fileStorageService,
+                       PasswordEncoder passwordEncoder) {
+        this.userRepository    = userRepository;
+        this.fileStorageService= fileStorageService;
+        this.passwordEncoder   = passwordEncoder;
     }
 
     public UserProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
         return mapToProfileResponse(user);
     }
 
@@ -48,34 +51,52 @@ public class UserService {
         if (request.getGithub() != null)   user.setGithub(request.getGithub());
         if (request.getSkills() != null)   user.setSkills(request.getSkills());
 
-        User saved = userRepository.save(user);
-        return mapToProfileResponse(saved);
+        return mapToProfileResponse(userRepository.save(user));
     }
 
     public UserProfileResponse uploadProfileImage(String email, MultipartFile file) throws IOException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Delete old image if exists
         if (user.getProfileImagePath() != null) {
             fileStorageService.deleteFile(user.getProfileImagePath());
         }
 
-        String path = fileStorageService.saveProfileImage(file, user.getId());
-        user.setProfileImagePath(path);
-
-        User saved = userRepository.save(user);
-        return mapToProfileResponse(saved);
+        String imagePath = fileStorageService.saveProfileImage(file, user.getId());
+        user.setProfileImagePath(imagePath);
+        return mapToProfileResponse(userRepository.save(user));
     }
 
     public List<UserProfileResponse> searchUsers(String name) {
-        List<User> allUsers = userRepository.findAll();
-        List<UserProfileResponse> result = new ArrayList<>();
-        for (User u : allUsers) {
-            if (u.getName().toLowerCase().contains(name.toLowerCase())) {
-                result.add(mapToProfileResponse(u));
-            }
+        List<User> users;
+        if (name == null || name.trim().isEmpty()) {
+            users = userRepository.findAll();
+        } else {
+            users = userRepository.findByNameContainingIgnoreCase(name);
         }
+        List<UserProfileResponse> result = new ArrayList<>();
+        for (User u : users) result.add(mapToProfileResponse(u));
         return result;
+    }
+
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+        if (newPassword.length() < 6) {
+            throw new RuntimeException("New password must be at least 6 characters");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    public void deleteAccount(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        userRepository.delete(user);
     }
 
     private UserProfileResponse mapToProfileResponse(User user) {
@@ -90,8 +111,8 @@ public class UserService {
                 .skills(user.getSkills())
                 .profileImageUrl(
                     user.getProfileImagePath() != null
-                    ? BASE_URL + user.getProfileImagePath()
-                    : null
+                        ? BASE_URL + user.getProfileImagePath()
+                        : null
                 )
                 .build();
     }

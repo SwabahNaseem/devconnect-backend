@@ -1,6 +1,7 @@
 package com.devconnect.service;
 
 import com.devconnect.dto.*;
+import com.devconnect.model.Project.ProjectStatus;
 import com.devconnect.model.*;
 import com.devconnect.repository.*;
 import org.springframework.stereotype.Service;
@@ -53,7 +54,9 @@ public class ProjectService {
     public List<ProjectResponse> getAllProjects(String email) {
         User currentUser = getUserByEmail(email);
         List<ProjectResponse> result = new ArrayList<>();
-        for (Project p : projectRepository.findAll()) result.add(mapToProjectResponse(p, currentUser));
+        for (Project p : projectRepository.findAll()) {
+            if (p.getStatus() != ProjectStatus.DELETED) result.add(mapToProjectResponse(p, currentUser));
+        }
         return result;
     }
 
@@ -167,6 +170,40 @@ public class ProjectService {
         return memberToKick.getName() + " has been removed from the project";
     }
 
+    // ─────────────────────── STATUS ──────────────────────────
+
+    /** Mark project as COMPLETED — requires at least 1 file uploaded */
+    public ProjectResponse completeProject(Long projectId, String email) {
+        User lead = getUserByEmail(email);
+        Project project = getProjectById(projectId);
+        if (!project.getLead().getId().equals(lead.getId()))
+            throw new RuntimeException("Only the lead can mark the project as complete");
+        if (project.getFiles().isEmpty())
+            throw new RuntimeException("Cannot complete project without at least 1 uploaded file");
+        project.setStatus(ProjectStatus.COMPLETED);
+        return mapToProjectResponse(projectRepository.save(project), lead);
+    }
+
+    /** Soft-delete project — marks as DELETED without removing from DB */
+    public void softDeleteProject(Long projectId, String email) {
+        User lead = getUserByEmail(email);
+        Project project = getProjectById(projectId);
+        if (!project.getLead().getId().equals(lead.getId()))
+            throw new RuntimeException("Only the lead can delete the project");
+        project.setStatus(ProjectStatus.DELETED);
+        projectRepository.save(project);
+    }
+
+    /** Reopen a completed project back to ACTIVE */
+    public ProjectResponse reopenProject(Long projectId, String email) {
+        User lead = getUserByEmail(email);
+        Project project = getProjectById(projectId);
+        if (!project.getLead().getId().equals(lead.getId()))
+            throw new RuntimeException("Only the lead can reopen the project");
+        project.setStatus(ProjectStatus.ACTIVE);
+        return mapToProjectResponse(projectRepository.save(project), lead);
+    }
+
     // ─────────────────────── FILES ───────────────────────────
 
     public FileResponse uploadFile(Long projectId, String email, MultipartFile file) throws IOException {
@@ -233,7 +270,7 @@ public class ProjectService {
                 .createdAt(project.getCreatedAt()).skills(project.getSkills())
                 .lead(mapToUserSummary(project.getLead())).members(members)
                 .pendingRequestsCount(isLead ? (int) pendingCount : null)
-                .filesCount(project.getFiles().size()).maxMembers(project.getMaxMembers()).isMember(isMember)
+                .filesCount(project.getFiles().size()).maxMembers(project.getMaxMembers()).status(project.getStatus()).isMember(isMember)
                 .isLead(isLead).hasRequested(hasRequested).build();
     }
 

@@ -1,6 +1,7 @@
 package com.devconnect.dto;
 
 import java.time.LocalDate;
+import com.devconnect.model.Project.ProjectStatus;
 import java.util.List;
 
 public class ProjectResponse {
@@ -15,6 +16,7 @@ public class ProjectResponse {
     private Integer pendingRequestsCount;
     private Integer filesCount;
     private Integer maxMembers;
+    private ProjectStatus status;
     private boolean isMember;
     private boolean hasRequested;
     private boolean isLead;
@@ -32,6 +34,7 @@ public class ProjectResponse {
     public Integer getPendingRequestsCount()   { return pendingRequestsCount; }
     public Integer getFilesCount()             { return filesCount; }
     public Integer getMaxMembers()             { return maxMembers; }
+    public ProjectStatus getStatus()           { return status; }
     public boolean isMember()                  { return isMember; }
     public boolean isHasRequested()            { return hasRequested; }
     public boolean isIsLead()                  { return isLead; }
@@ -47,6 +50,7 @@ public class ProjectResponse {
     public void setPendingRequestsCount(Integer pendingRequestsCount)  { this.pendingRequestsCount = pendingRequestsCount; }
     public void setFilesCount(Integer filesCount)                      { this.filesCount = filesCount; }
     public void setMaxMembers(Integer maxMembers)                      { this.maxMembers = maxMembers; }
+    public void setStatus(ProjectStatus status)                        { this.status = status; }
     public void setMember(boolean isMember)                            { this.isMember = isMember; }
     public void setHasRequested(boolean hasRequested)                  { this.hasRequested = hasRequested; }
     public void setIsLead(boolean isLead)                              { this.isLead = isLead; }
@@ -64,6 +68,8 @@ public class ProjectResponse {
         private Integer pendingRequestsCount;
         private Integer filesCount;
         private Integer maxMembers;
+        private ProjectStatus status;
+    
         private boolean isMember;
         private boolean hasRequested;
         private boolean isLead;
@@ -78,6 +84,7 @@ public class ProjectResponse {
         public Builder pendingRequestsCount(Integer c)           { this.pendingRequestsCount = c; return this; }
         public Builder filesCount(Integer c)                     { this.filesCount = c; return this; }
         public Builder maxMembers(Integer c)                     { this.maxMembers = c; return this; }
+        public Builder status(ProjectStatus s)                   { this.status = s; return this; }
         public Builder isMember(boolean b)                       { this.isMember = b; return this; }
         public Builder hasRequested(boolean b)                   { this.hasRequested = b; return this; }
         public Builder isLead(boolean b)                         { this.isLead = b; return this; }
@@ -94,6 +101,7 @@ public class ProjectResponse {
             r.pendingRequestsCount = pendingRequestsCount;
             r.filesCount = filesCount;
             r.maxMembers = maxMembers;
+            r.status = status;
             r.isMember = isMember;
             r.hasRequested = hasRequested;
             r.isLead = isLead;

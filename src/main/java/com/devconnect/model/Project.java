@@ -9,6 +9,8 @@ import java.util.List;
 @Table(name = "projects")
 public class Project {
 
+    public enum ProjectStatus { ACTIVE, COMPLETED, DELETED }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,8 +23,10 @@ public class Project {
 
     private LocalDate createdAt;
 
-    // Maximum number of team members (default 4)
     private Integer maxMembers = 4;
+
+    @Enumerated(EnumType.STRING)
+    private ProjectStatus status = ProjectStatus.ACTIVE;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "project_skills", joinColumns = @JoinColumn(name = "project_id"))
@@ -55,34 +59,35 @@ public class Project {
         this.createdAt = LocalDate.now();
     }
 
-    // ── No-arg constructor ──
     public Project() {}
 
     // ── Getters ──
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public String getDescription() { return description; }
-    public LocalDate getCreatedAt() { return createdAt; }
-    public Integer getMaxMembers() { return maxMembers == null ? 4 : maxMembers; }
-    public List<String> getSkills() { return skills; }
-    public User getLead() { return lead; }
-    public List<User> getMembers() { return members; }
+    public Long getId()                  { return id; }
+    public String getName()              { return name; }
+    public String getDescription()       { return description; }
+    public LocalDate getCreatedAt()      { return createdAt; }
+    public Integer getMaxMembers()       { return maxMembers == null ? 4 : maxMembers; }
+    public ProjectStatus getStatus()     { return status == null ? ProjectStatus.ACTIVE : status; }
+    public List<String> getSkills()      { return skills; }
+    public User getLead()                { return lead; }
+    public List<User> getMembers()       { return members; }
     public List<JoinRequest> getJoinRequests() { return joinRequests; }
-    public List<ProjectFile> getFiles() { return files; }
-    public List<Message> getMessages() { return messages; }
+    public List<ProjectFile> getFiles()  { return files; }
+    public List<Message> getMessages()   { return messages; }
 
     // ── Setters ──
-    public void setId(Long id) { this.id = id; }
-    public void setName(String name) { this.name = name; }
-    public void setDescription(String description) { this.description = description; }
-    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
-    public void setMaxMembers(Integer maxMembers) { this.maxMembers = maxMembers; }
-    public void setSkills(List<String> skills) { this.skills = skills; }
-    public void setLead(User lead) { this.lead = lead; }
-    public void setMembers(List<User> members) { this.members = members; }
-    public void setJoinRequests(List<JoinRequest> joinRequests) { this.joinRequests = joinRequests; }
-    public void setFiles(List<ProjectFile> files) { this.files = files; }
-    public void setMessages(List<Message> messages) { this.messages = messages; }
+    public void setId(Long id)                         { this.id = id; }
+    public void setName(String name)                   { this.name = name; }
+    public void setDescription(String d)               { this.description = d; }
+    public void setCreatedAt(LocalDate c)              { this.createdAt = c; }
+    public void setMaxMembers(Integer m)               { this.maxMembers = m; }
+    public void setStatus(ProjectStatus s)             { this.status = s; }
+    public void setSkills(List<String> s)              { this.skills = s; }
+    public void setLead(User lead)                     { this.lead = lead; }
+    public void setMembers(List<User> m)               { this.members = m; }
+    public void setJoinRequests(List<JoinRequest> j)   { this.joinRequests = j; }
+    public void setFiles(List<ProjectFile> f)          { this.files = f; }
+    public void setMessages(List<Message> m)           { this.messages = m; }
 
     // ── Builder ──
     public static Builder builder() { return new Builder(); }
@@ -90,26 +95,29 @@ public class Project {
     public static class Builder {
         private String name;
         private String description;
-        private List<String> skills = new ArrayList<>();
+        private List<String> skills    = new ArrayList<>();
         private User lead;
-        private Integer maxMembers = 4;
-        private List<User> members = new ArrayList<>();
+        private Integer maxMembers     = 4;
+        private ProjectStatus status   = ProjectStatus.ACTIVE;
+        private List<User> members     = new ArrayList<>();
 
-        public Builder name(String name) { this.name = name; return this; }
-        public Builder description(String description) { this.description = description; return this; }
-        public Builder skills(List<String> skills) { this.skills = skills; return this; }
-        public Builder lead(User lead) { this.lead = lead; return this; }
-        public Builder maxMembers(Integer v) { this.maxMembers = v; return this; }
-        public Builder members(List<User> members) { this.members = members; return this; }
+        public Builder name(String v)              { this.name = v;        return this; }
+        public Builder description(String v)       { this.description = v; return this; }
+        public Builder skills(List<String> v)      { this.skills = v;      return this; }
+        public Builder lead(User v)                { this.lead = v;        return this; }
+        public Builder maxMembers(Integer v)       { this.maxMembers = v;  return this; }
+        public Builder status(ProjectStatus v)     { this.status = v;      return this; }
+        public Builder members(List<User> v)       { this.members = v;     return this; }
 
         public Project build() {
             Project p = new Project();
-            p.name = this.name;
+            p.name        = this.name;
             p.description = this.description;
-            p.skills = this.skills;
-            p.lead = this.lead;
-            p.maxMembers = this.maxMembers;
-            p.members = this.members;
+            p.skills      = this.skills;
+            p.lead        = this.lead;
+            p.maxMembers  = this.maxMembers;
+            p.status      = this.status;
+            p.members     = this.members;
             return p;
         }
     }
